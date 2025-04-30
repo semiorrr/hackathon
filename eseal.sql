@@ -1,8 +1,7 @@
--- Create the database (if not yet created)
+
 CREATE DATABASE eseal;
 USE eseal;
 
--- Create the containers table
 CREATE TABLE IF NOT EXISTS containers (
     id INT AUTO_INCREMENT PRIMARY KEY,
     container_id VARCHAR(50) NOT NULL,
@@ -11,7 +10,6 @@ CREATE TABLE IF NOT EXISTS containers (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- Insert sample data
 INSERT INTO containers (container_id, location) VALUES
 ('CNT-001', 'Cebu Port'),
 ('CNT-002', 'SRP Road'),
