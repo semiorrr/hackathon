@@ -10,11 +10,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['container_id'])) {
     $id = $_POST['container_id'];
     $stmt = $pdo->prepare("UPDATE containers SET status = 'Tampered' WHERE container_id = ?");
     $stmt->execute([$id]);
-    echo "Seal broken on container $id!";
+
+    // Redirect to dashboard after tamper
+    header('Location: dashboard.php');
+    exit;
 }
 ?>
 
-<form method="POST">
-    <input type="text" name="container_id" placeholder="Enter Container ID">
-    <button type="submit">Break Seal</button>
-</form>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Simulate Tamper</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+    <h1>eSeal Alert</h1>
+    <nav>
+        <a href="dashboard.php">Dashboard</a>
+        <a href="logout.php">Logout</a>
+    </nav>
+</header>
+
+<div class="container">
+    <h2>Simulate Seal Break</h2>
+    <form method="POST">
+        <input type="text" name="container_id" placeholder="Enter Container ID" required>
+        <br><br>
+        <button type="submit">Break Seal</button>
+    </form>
+</div>
+
+</body>
+</html>
