@@ -39,6 +39,36 @@ $users = $pdo->query("SELECT id, username, role, created_at FROM users")->fetchA
     <meta charset="UTF-8">
     <title>Admin Dashboard – LogiLock</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        .modal {
+            position: fixed;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 25px 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+            text-align: center;
+        }
+        .modal-content {
+            position: relative;
+        }
+        .modal-content .close-btn {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: red;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 14px;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
 
@@ -55,10 +85,19 @@ $users = $pdo->query("SELECT id, username, role, created_at FROM users")->fetchA
     <h2>Welcome, <?= htmlspecialchars($_SESSION['username']) ?> (Admin)</h2>
 
     <!-- Status Messages -->
-    <?php if ($error): ?>
-        <div class="modal"><div class="modal-content"><h2 style="color:red;"><?= $error ?></h2></div></div>
-    <?php elseif ($success): ?>
-        <div class="modal"><div class="modal-content"><h2 style="color:green;"><?= $success ?></h2></div></div>
+    <?php if ($error || $success): ?>
+        <div class="modal" id="statusModal">
+            <div class="modal-content">
+                <button class="close-btn" onclick="document.getElementById('statusModal').style.display='none'">×</button>
+                <h2 style="color:<?= $error ? 'red' : 'green' ?>;"><?= $error ?: $success ?></h2>
+            </div>
+        </div>
+        <script>
+            setTimeout(() => {
+                const modal = document.getElementById('statusModal');
+                if (modal) modal.style.display = 'none';
+            }, 3000);
+        </script>
     <?php endif; ?>
 
     <!-- Add Container Form -->
@@ -115,7 +154,6 @@ $users = $pdo->query("SELECT id, username, role, created_at FROM users")->fetchA
             <?php endforeach; ?>
         </tbody>
     </table>
-
 </div>
 
 </body>
