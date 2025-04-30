@@ -17,7 +17,7 @@
 </header>
 
 <div class="login-container">
-    <h2>Login to Dashboard</h2>
+    <h2>Login</h2>
     <form method="POST" action="../actions/login_check.php">
         <input type="text" name="username" placeholder="Username" required><br>
         <input type="password" name="password" placeholder="Password" required><br>
