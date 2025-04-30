@@ -1,0 +1,155 @@
+Great! Since you already have access to **AISStream.io**, you can use its real-time AIS (Automatic Identification System) data to track vessels carrying containers. Here's how to integrate it into your **eSeal Alert** app:
+
+---
+
+### **Step 1: Understand AISStream.io Data**
+AISStream provides real-time vessel positions (latitude/longitude), but not direct container tracking. To link containers to vessels:
+1. **Map Containers to Vessels**:  
+   - Maintain a database linking `CONTAINER ID` (e.g., `CNT-001`) to a vessel's **IMO number** or **MMSI** (e.g., `VESSEL_MAERSK_123`).  
+   - Example:  
+     ```json
+     {
+       "containerId": "CNT-001",
+       "vesselMMSI": "123456789",
+       "status": "Sealed",
+       "lastPort": "Cebu Port"
+     }
+     ```
+
+2. **AIS Data Fields to Use**:  
+   - `MMSI` (Unique vessel ID).  
+   - `LAT`/`LON` (Real-time coordinates).  
+   - `DESTINATION` (Next port, e.g., "Taglaiaran Pier").  
+
+---
+
+### **Step 2: Connect to AISStream.io**
+#### **Option A: WebSocket (Real-Time)**
+AISStream uses WebSockets for live data. Here’s how to subscribe to vessel positions:
+```javascript
+// JavaScript Example (Frontend/Node.js)
+const WebSocket = require('ws');
+const socket = new WebSocket('wss://stream.aisstream.io/v1/stream');
+
+socket.on('open', () => {
+  console.log('Connected to AISStream');
+  socket.send(JSON.stringify({
+    APIKey: "YOUR_API_KEY",
+    BoundingBoxes: [[-90, -180, 90, 180]], // Global coverage
+    FilterMessageTypes: ["PositionReport"] // Focus on vessel positions
+  }));
+});
+
+socket.on('message', (data) => {
+  const vesselData = JSON.parse(data);
+  if (vesselData.MessageType === "PositionReport") {
+    console.log(
+      `Vessel MMSI: ${vesselData.MMSI}`, 
+      `Lat/Lon: ${vesselData.Latitude}, ${vesselData.Longitude}`,
+      `Destination: ${vesselData.Destination}`
+    );
+    // Update your database/UI here
+  }
+});
+```
+
+#### **Option B: REST API (Historical Data)**
+If you need past positions, use AISStream’s HTTP API:
+```python
+# Python Example
+import requests
+
+url = "https://api.aisstream.io/v1/historical"
+params = {
+    "mmsi": "123456789",  # Vessel linked to CNT-001
+    "start": "2025-04-30T00:00:00Z",
+    "end": "2025-04-30T12:00:00Z",
+    "apiKey": "YOUR_API_KEY"
+}
+response = requests.get(url, params=params)
+print(response.json())  # Vessel's route history
+```
+
+---
+
+### **Step 3: Link Containers to Vessels**
+1. **Database Setup**:  
+   - Add a `vesselMMSI` field to your container records.  
+   - Example (Firestore/Firebase):  
+     ```javascript
+     db.collection("containers").doc("CNT-001").set({
+       status: "Sealed",
+       vesselMMSI: "123456789",
+       lastUpdated: new Date()
+     });
+     ```
+
+2. **Update Container Locations**:  
+   - When AIS data arrives, match the `MMSI` to your containers and update their locations.  
+   ```javascript
+   // Pseudocode
+   socket.on('message', (data) => {
+     const vessel = JSON.parse(data);
+     if (vessel.MMSI === "123456789") {  // Vessel carrying CNT-001
+       db.collection("containers").doc("CNT-001").update({
+         location: `${vessel.Latitude}, ${vessel.Longitude}`,
+         lastUpdated: new Date()
+       });
+     }
+   });
+   ```
+
+---
+
+### **Step 4: Display Real-Time Data in Your App**
+Update your UI to show vessel-linked containers dynamically:
+```javascript
+// Example: Fetch and display containers
+function updateContainerTable() {
+  db.collection("containers").onSnapshot((snapshot) => {
+    snapshot.docs.forEach(doc => {
+      const container = doc.data();
+      console.log(
+        `Container ${doc.id} is at ${container.location}`,
+        `on vessel ${container.vesselMMSI}`
+      );
+      // Render to your HTML table
+    });
+  });
+}
+```
+
+---
+
+### **Step 5: Handle Tampering Alerts**
+If a container’s vessel deviates from its route or stops moving:
+```javascript
+// Check for anomalies (e.g., unexpected stops)
+socket.on('message', (data) => {
+  const vessel = JSON.parse(data);
+  if (vessel.Speed === 0 && vessel.Destination !== "Cebu Port") {
+    db.collection("containers").doc("CNT-001").update({
+      status: "X Tempered",
+      alert: "Vessel stopped unexpectedly!"
+    });
+  }
+});
+```
+
+---
+
+### **Key Considerations**
+1. **Rate Limits**: AISStream’s free tier may have message caps.  
+2. **Data Accuracy**: AIS data is ~1-3 minutes delayed.  
+3. **Geofencing**: Use ports’ LAT/LON to trigger "Arrived" statuses.  
+
+---
+
+### **Final Architecture**
+```
+AISStream.io (WebSocket) → Your Backend → Match MMSI to Containers → Update DB → UI
+```
+
+Need help with a specific part (e.g., database setup or WebSocket errors)? Let me know!
+
+api key: 0aec20f8edf1e02f253115b15e1f2a81bfbdf15c
