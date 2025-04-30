@@ -26,5 +26,3 @@ The **eSeal Alert** app is a real-time container monitoring system designed to t
 
 **Purpose:**  
 The app ensures secure logistics by enabling users to monitor container integrity in real time, detect tampering, and respond swiftly to unauthorized access. Ideal for logistics companies, port authorities, and supply chain managers.
-
-https://aisstream.io/
