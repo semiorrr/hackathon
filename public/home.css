@@ -1,6 +1,5 @@
-/* Hero Banner */
 .hero {
-    background: url('/img/Supply-Chain-Network-Resource-Image-1200x630-1.png') no-repeat center center/cover;
+    background: url('./img/bg.webp') no-repeat center center/cover;
     height: 70vh;
     display: flex;
     align-items: center;
