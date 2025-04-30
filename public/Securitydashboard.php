@@ -12,13 +12,13 @@ $containers = $pdo->query("SELECT * FROM containers")->fetchAll();
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Security Dashboard – LogiLock</title>
+    <title>LogiLock</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <header>
-    <h1>LogiLock – Security Dashboard</h1>
+    <h1>LogiLock – Security</h1>
     <nav>
         <a href="Securitydashboard.php">Dashboard</a>
         <a href="tamper.php">Simulate Tamper</a>
