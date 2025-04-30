@@ -1,1 +1,0 @@
-suwat sa yawa
