@@ -1,4 +1,4 @@
-# hackathon
+# **eSeal Alert**
 
 **Feature Description for eSeal Alert App:**
 
