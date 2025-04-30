@@ -12,8 +12,23 @@ $user = $stmt->fetch();
 if ($user && password_verify($password, $user['password'])) {
     $_SESSION['logged_in'] = true;
     $_SESSION['username'] = $user['username'];
-    $_SESSION['role'] = $user['role'];  
-    header('Location: ../public/dashboard.php');
+    $_SESSION['role'] = $user['role'];
+
+    // Role-based redirection
+    switch ($user['role']) {
+        case 'admin':
+            header('Location: ../public/dashboard.php');
+            break;
+        case 'staff':
+            header('Location: ../public/Staffdashboard.php');
+            break;
+        case 'security':
+            header('Location: ../public/Securitydashboard.php');
+            break;
+        default:
+            echo '<h2>❌ Access denied. Unknown role.</h2>';
+            break;
+    }
     exit;
 } else {
     echo '
