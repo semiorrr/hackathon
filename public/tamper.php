@@ -11,7 +11,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['container_id'])) {
     $stmt = $pdo->prepare("UPDATE containers SET status = 'Tampered' WHERE container_id = ?");
     $stmt->execute([$id]);
 
-    // Redirect to dashboard after tamper
     header('Location: dashboard.php');
     exit;
 }
