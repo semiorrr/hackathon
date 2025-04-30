@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['container_id'], $_POS
 <body>
 
 <header>
-    <h1>eSeal Alert</h1>
+    <h1>LogiLock</h1>
     <nav>
         <a href="dashboard.php">Dashboard</a>
         <a href="logout.php">Logout</a>

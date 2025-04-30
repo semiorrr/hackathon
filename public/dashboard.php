@@ -13,13 +13,13 @@ $containers = $stmt->fetchAll();
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>eSeal Alert Dashboard</title>
+    <title>LogiLock Dashboard</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <header>
-    <h1>eSeal Alert</h1>
+    <h1>LogiLock</h1>
     <nav>
         <a href="dashboard.php">Dashboard</a>
         <a href="tamper.php">Simulate Tamper</a>
