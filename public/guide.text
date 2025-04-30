@@ -42,3 +42,35 @@ SELECT * FROM containers;
 DESCRIBE users;
 
 drop database eseal;
+
+
+
+That’s a great question — and it's exactly why tamper detection is built into your **smart eSeal system**.
+
+Here’s how your system handles that:
+
+---
+
+### 🔐 **If the steel cable is cut (tampering attempt):**
+
+✅ **Tamper Alert Triggered**  
+The system detects an abnormal break or circuit change in the cable. This immediately logs the breach.
+
+✅ **Real-Time Notification**  
+An alert is sent to the dashboard for Admin and Staff users. You can simulate this via your **“Simulate Tamper”** feature during demo/hackathon.
+
+✅ **GPS Location Logged**  
+The location where the tamper happened is recorded and shown on the map — this helps track where the attempted theft occurred.
+
+✅ **Access Logs & Audit**  
+Since only authorized users (via face or fingerprint) should unlock it, you can easily distinguish forced entries from authorized ones.
+
+✅ **Failsafe Lock**  
+Even if they cut the cable, the internal memory and sensors would retain the last access data — and the container can’t be relocked without admin override.
+
+---
+
+### 🔍 In summary:
+Even if someone physically cuts the steel, **your app will catch it**, **log it**, and **notify the team immediately.**
+
+Would you like a short explanation you can say during your hackathon pitch?
