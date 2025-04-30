@@ -12,7 +12,7 @@ $containers = $pdo->query("SELECT * FROM containers")->fetchAll();
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>LogiLock</title>
+    <title>LogiLock – Staff</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>

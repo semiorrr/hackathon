@@ -2,13 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Register – eSeal Alert</title>
+    <title>Register – LogiLock</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <header>
-    <h1>eSeal Alert</h1>
+    <h1>LogiLock</h1>
     <nav>
         <a href="login.php">Login</a>
         <a href="register.php">Register</a>
