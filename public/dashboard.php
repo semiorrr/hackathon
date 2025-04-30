@@ -10,20 +10,47 @@ require '../config/db.php';
 $error = '';
 $success = '';
 
-// Handle form submission (with location geocoded via JS)
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['container_id'], $_POST['location'], $_POST['pin'], $_POST['latitude'], $_POST['longitude'])) {
+// Delete Container Logic
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_container_id'])) {
+    $delete_id = $_POST['delete_container_id'];
+    $stmt = $pdo->prepare("DELETE FROM containers WHERE id = ?");
+    if ($stmt->execute([$delete_id])) {
+        $success = '🗑️ Container deleted successfully!';
+    } else {
+        $error = '❌ Failed to delete container.';
+    }
+}
+
+// Add Container Logic
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['container_id'], $_POST['location'], $_POST['origin'], $_POST['destination'], $_POST['pin'], $_POST['latitude'], $_POST['longitude'], $_POST['latitude_origin'], $_POST['longitude_origin'], $_POST['latitude_dest'], $_POST['longitude_dest']) && !isset($_POST['delete_container_id'])) {
     $cid = $_POST['container_id'];
     $loc = $_POST['location'];
+    $origin = $_POST['origin'];
+    $dest = $_POST['destination'];
     $pin = $_POST['pin'];
+
     $lat = floatval($_POST['latitude']);
     $lng = floatval($_POST['longitude']);
+    $lat_orig = floatval($_POST['latitude_origin']);
+    $lng_orig = floatval($_POST['longitude_origin']);
+    $lat_dest = floatval($_POST['latitude_dest']);
+    $lng_dest = floatval($_POST['longitude_dest']);
 
     if (!preg_match('/^\d{4}$/', $pin)) {
         $error = '❌ PIN must be a 4-digit number.';
     } else {
-        $stmt = $pdo->prepare("INSERT INTO containers (container_id, location, pin, latitude, longitude) VALUES (?, ?, ?, ?, ?)");
+        $earthRadius = 6371;
+        $dLat = deg2rad($lat_dest - $lat_orig);
+        $dLon = deg2rad($lng_dest - $lng_orig);
+        $a = sin($dLat / 2) * sin($dLat / 2) + cos(deg2rad($lat_orig)) * cos(deg2rad($lat_dest)) * sin($dLon / 2) * sin($dLon / 2);
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+        $distance = $earthRadius * $c;
+        $speed = 40;
+        $eta = date('Y-m-d H:i:s', time() + (($distance / $speed) * 3600));
+
+        $stmt = $pdo->prepare("INSERT INTO containers (container_id, location, pin, origin, destination, estimated_arrival, latitude, longitude, latitude_origin, longitude_origin, latitude_dest, longitude_dest) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         try {
-            $stmt->execute([$cid, $loc, $pin, $lat, $lng]);
+            $stmt->execute([$cid, $loc, $pin, $origin, $dest, $eta, $lat, $lng, $lat_orig, $lng_orig, $lat_dest, $lng_dest]);
             $success = '✅ Container added successfully!';
         } catch (PDOException $e) {
             $error = '❌ Failed to add container: ' . htmlspecialchars($e->getMessage());
@@ -42,30 +69,6 @@ $users = $pdo->query("SELECT id, username, role, created_at FROM users")->fetchA
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <style>
-        .modal {
-            position: fixed;
-            top: 30%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 25px 30px;
-            border-radius: 8px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.2);
-            z-index: 1000;
-            text-align: center;
-        }
-        .modal-content { position: relative; }
-        .modal-content .close-btn {
-            position: absolute;
-            top: -10px; right: -10px;
-            background: red; color: white;
-            border: none; border-radius: 50%;
-            font-size: 14px; width: 24px; height: 24px;
-            cursor: pointer;
-        }
-        #map { height: 400px; margin-top: 20px; }
-    </style>
 </head>
 <body>
 
@@ -81,7 +84,6 @@ $users = $pdo->query("SELECT id, username, role, created_at FROM users")->fetchA
 <div class="container">
     <h2>Welcome, <?= htmlspecialchars($_SESSION['username']) ?> (Admin)</h2>
 
-    <!-- Feedback Messages -->
     <?php if ($error || $success): ?>
         <div class="modal" id="statusModal">
             <div class="modal-content">
@@ -89,48 +91,50 @@ $users = $pdo->query("SELECT id, username, role, created_at FROM users")->fetchA
                 <h2 style="color:<?= $error ? 'red' : 'green' ?>;"><?= $error ?: $success ?></h2>
             </div>
         </div>
-        <script>
-            setTimeout(() => {
-                const modal = document.getElementById('statusModal');
-                if (modal) modal.style.display = 'none';
-            }, 3000);
-        </script>
+        <script>setTimeout(() => document.getElementById('statusModal').style.display = 'none', 3000);</script>
     <?php endif; ?>
 
-    <!-- Add Container Form -->
+    <!-- Add Form -->
     <h3>Add New Container</h3>
     <form id="addForm" method="POST">
         <input type="text" name="container_id" placeholder="Container ID" required>
-        <input type="text" name="location" placeholder="Location" id="locationInput" required>
+        <input type="text" name="location" placeholder="Current Location" id="locationInput" required>
+        <input type="text" name="origin" placeholder="Origin" id="originInput" required>
+        <input type="text" name="destination" placeholder="Destination" id="destinationInput" required>
         <input type="password" name="pin" placeholder="4-digit PIN" maxlength="4" required>
         <button type="submit">Add Container</button>
     </form>
 
-    <!-- Auto-Geocode Location -->
     <script>
     document.getElementById("addForm").addEventListener("submit", function(e) {
         e.preventDefault();
         const form = this;
-        const location = document.getElementById("locationInput").value;
+        const loc = document.getElementById("locationInput").value;
+        const origin = document.getElementById("originInput").value;
+        const dest = document.getElementById("destinationInput").value;
 
-        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(location)}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.length > 0) {
-                    const lat = document.createElement("input");
-                    lat.type = "hidden"; lat.name = "latitude"; lat.value = data[0].lat;
-
-                    const lon = document.createElement("input");
-                    lon.type = "hidden"; lon.name = "longitude"; lon.value = data[0].lon;
-
-                    form.appendChild(lat);
-                    form.appendChild(lon);
-                    form.submit();
-                } else {
-                    alert("❌ Location not found. Try again with a more specific place.");
-                }
-            })
-            .catch(() => alert("❌ Error fetching location data."));
+        Promise.all([
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(loc)}`).then(res => res.json()),
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(origin)}`).then(res => res.json()),
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(dest)}`).then(res => res.json())
+        ]).then(([locData, origData, destData]) => {
+            if (locData[0] && origData[0] && destData[0]) {
+                const addInput = (name, value) => {
+                    const input = document.createElement("input");
+                    input.type = "hidden"; input.name = name; input.value = value;
+                    form.appendChild(input);
+                };
+                addInput("latitude", locData[0].lat);
+                addInput("longitude", locData[0].lon);
+                addInput("latitude_origin", origData[0].lat);
+                addInput("longitude_origin", origData[0].lon);
+                addInput("latitude_dest", destData[0].lat);
+                addInput("longitude_dest", destData[0].lon);
+                form.submit();
+            } else {
+                alert("❌ One or more locations couldn't be found.");
+            }
+        }).catch(() => alert("❌ Error during location lookup."));
     });
     </script>
 
@@ -141,49 +145,69 @@ $users = $pdo->query("SELECT id, username, role, created_at FROM users")->fetchA
             <tr>
                 <th>Container ID</th>
                 <th>Status</th>
-                <th>Last Updated</th>
                 <th>Location</th>
+                <th>Origin → Destination</th>
+                <th>ETA</th>
+                <th>Last Updated</th>
+                <th>Action</th>
             </tr>
         </thead>
         <tbody>
-            <?php foreach ($containers as $c): ?>
+        <?php foreach ($containers as $c): ?>
             <tr>
                 <td><?= htmlspecialchars($c['container_id']) ?></td>
-                <td><?= $c['status'] == 'Tampered' ? '❌ Tampered' : '✅ Sealed' ?></td>
-                <td><?= $c['updated_at'] ?></td>
+                <td><?= $c['status'] === 'Tampered' ? '❌ Tampered' : '✅ Sealed' ?></td>
                 <td><?= htmlspecialchars($c['location']) ?></td>
+                <td><?= htmlspecialchars($c['origin']) ?> → <?= htmlspecialchars($c['destination']) ?></td>
+                <td><?= $c['estimated_arrival'] ?></td>
+                <td><?= $c['updated_at'] ?></td>
+                <td>
+                    <button onclick="openDeleteModal(<?= $c['id'] ?>)">🗑️</button>
+                </td>
             </tr>
-            <?php endforeach; ?>
+        <?php endforeach; ?>
         </tbody>
     </table>
 
-    <!-- Map -->
+    <!-- Deletion Modal -->
+    <div id="deleteModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <h2>Are you sure you want to delete this container?</h2>
+            <form method="POST">
+                <input type="hidden" name="delete_container_id" id="delete_container_id">
+                <button type="submit" style="background: red; color: white;">Yes, Delete</button>
+                <button type="button" onclick="document.getElementById('deleteModal').style.display='none'">Cancel</button>
+            </form>
+        </div>
+    </div>
+    <script>
+        function openDeleteModal(id) {
+            document.getElementById("delete_container_id").value = id;
+            document.getElementById("deleteModal").style.display = "flex";
+        }
+    </script>
+
     <h3>Container Map</h3>
-    <div id="map"></div>
+    <div id="map" style="height: 400px;"></div>
     <script>
         const map = L.map('map').setView([10.3157, 123.8854], 6);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
-
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
         const containers = <?= json_encode($containers) ?>;
         containers.forEach(c => {
             if (c.latitude && c.longitude) {
-                const iconColor = c.status === 'Tampered' ? 'red' : 'green';
                 const marker = L.circleMarker([c.latitude, c.longitude], {
                     radius: 8,
-                    fillColor: iconColor,
+                    fillColor: c.status === 'Tampered' ? 'red' : 'green',
                     color: '#000',
                     weight: 1,
                     opacity: 1,
                     fillOpacity: 0.8
                 }).addTo(map);
-                marker.bindPopup(`<b>${c.container_id}</b><br>Status: ${c.status}<br>Location: ${c.location}`);
+                marker.bindPopup(`<strong>${c.container_id}</strong><br>${c.origin} → ${c.destination}<br>ETA: ${c.estimated_arrival}`);
             }
         });
     </script>
 
-    <!-- User Table -->
     <h3>Registered Users</h3>
     <table>
         <thead>

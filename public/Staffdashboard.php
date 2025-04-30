@@ -35,8 +35,10 @@ $containers = $pdo->query("SELECT * FROM containers")->fetchAll();
             <tr>
                 <th>Container ID</th>
                 <th>Status</th>
-                <th>Last Updated</th>
                 <th>Location</th>
+                <th>Origin → Destination</th>
+                <th>ETA</th>
+                <th>Last Updated</th>
             </tr>
         </thead>
         <tbody>
@@ -44,8 +46,10 @@ $containers = $pdo->query("SELECT * FROM containers")->fetchAll();
             <tr>
                 <td><?= htmlspecialchars($c['container_id']) ?></td>
                 <td><?= $c['status'] === 'Tampered' ? '❌ Tampered' : '✅ Sealed' ?></td>
-                <td><?= $c['updated_at'] ?></td>
                 <td><?= htmlspecialchars($c['location']) ?></td>
+                <td><?= htmlspecialchars($c['origin']) ?> → <?= htmlspecialchars($c['destination']) ?></td>
+                <td><?= $c['estimated_arrival'] ?></td>
+                <td><?= $c['updated_at'] ?></td>
             </tr>
             <?php endforeach; ?>
         </tbody>
