@@ -1,6 +1,6 @@
 <?php
 session_start();
-if (!isset($_SESSION['logged_in']) || ($_SESSION['role'] ?? '') !== 'staff') {
+if (!isset($_SESSION['logged_in']) || ($_SESSION['role'] ?? '') !== 'security') {
     header('Location: login.php');
     exit;
 }
@@ -12,24 +12,24 @@ $containers = $pdo->query("SELECT * FROM containers")->fetchAll();
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Staff Dashboard – LogiLock</title>
+    <title>Security Dashboard – LogiLock</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <header>
-    <h1>LogiLock</h1>
+    <h1>LogiLock – Security Dashboard</h1>
     <nav>
-        <a href="Staffdashboard.php">Dashboard</a>
+        <a href="Securitydashboard.php">Dashboard</a>
         <a href="tamper.php">Simulate Tamper</a>
         <a href="logout.php">Logout</a>
     </nav>
 </header>
 
 <div class="container">
-    <h2>Welcome, <?= htmlspecialchars($_SESSION['username']) ?> (Staff)</h2>
+    <h2>Welcome, <?= htmlspecialchars($_SESSION['username']) ?> (Security)</h2>
 
-    <h3>Container Status Overview</h3>
+    <h3>Container Access Log</h3>
     <table>
         <thead>
             <tr>
@@ -50,6 +50,9 @@ $containers = $pdo->query("SELECT * FROM containers")->fetchAll();
             <?php endforeach; ?>
         </tbody>
     </table>
+
+    <br>
+    <p><strong>Note:</strong> Security staff can view container statuses and validate tamper logs. No modification privileges.</p>
 </div>
 
 </body>
