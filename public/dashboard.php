@@ -7,12 +7,26 @@ if (!isset($_SESSION['logged_in']) || ($_SESSION['role'] ?? '') !== 'admin') {
 
 require '../config/db.php';
 
-// Handle new container submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['container_id'], $_POST['location'])) {
+$error = '';
+$success = '';
+
+// Handle new container submission with PIN
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['container_id'], $_POST['location'], $_POST['pin'])) {
     $cid = $_POST['container_id'];
     $loc = $_POST['location'];
-    $stmt = $pdo->prepare("INSERT INTO containers (container_id, location) VALUES (?, ?)");
-    $stmt->execute([$cid, $loc]);
+    $pin = $_POST['pin'];
+
+    if (!preg_match('/^\d{4}$/', $pin)) {
+        $error = '❌ PIN must be a 4-digit number.';
+    } else {
+        $stmt = $pdo->prepare("INSERT INTO containers (container_id, location, pin) VALUES (?, ?, ?)");
+        try {
+            $stmt->execute([$cid, $loc, $pin]);
+            $success = '✅ Container added successfully!';
+        } catch (PDOException $e) {
+            $error = '❌ Failed to add container: ' . htmlspecialchars($e->getMessage());
+        }
+    }
 }
 
 // Fetch containers and users
@@ -40,11 +54,19 @@ $users = $pdo->query("SELECT id, username, role, created_at FROM users")->fetchA
 <div class="container">
     <h2>Welcome, <?= htmlspecialchars($_SESSION['username']) ?> (Admin)</h2>
 
+    <!-- Status Messages -->
+    <?php if ($error): ?>
+        <div class="modal"><div class="modal-content"><h2 style="color:red;"><?= $error ?></h2></div></div>
+    <?php elseif ($success): ?>
+        <div class="modal"><div class="modal-content"><h2 style="color:green;"><?= $success ?></h2></div></div>
+    <?php endif; ?>
+
     <!-- Add Container Form -->
     <h3>Add New Container</h3>
     <form method="POST">
         <input type="text" name="container_id" placeholder="Container ID" required>
         <input type="text" name="location" placeholder="Location" required>
+        <input type="password" name="pin" placeholder="4-digit PIN" maxlength="4" required>
         <button type="submit">Add Container</button>
     </form>
 

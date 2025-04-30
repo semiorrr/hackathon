@@ -12,8 +12,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['container_id'], $_POS
     $id = $_POST['container_id'];
     $pin = $_POST['pin'];
 
-    // Simulated biometric PIN verification (default: 1234)
-    if ($pin === '1234') {
+    // Retrieve correct PIN from DB
+    $stmt = $pdo->prepare("SELECT pin FROM containers WHERE container_id = ?");
+    $stmt->execute([$id]);
+    $row = $stmt->fetch();
+
+    if ($row && $pin === $row['pin']) {
         $stmt = $pdo->prepare("UPDATE containers SET status = 'Tampered' WHERE container_id = ?");
         $stmt->execute([$id]);
         header('Location: dashboard.php');
