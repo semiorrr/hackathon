@@ -10,7 +10,7 @@ require '../config/db.php';
 $error = '';
 $success = '';
 
-// Handle new container submission with PIN
+// Handle form submission (with location geocoded via JS)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['container_id'], $_POST['location'], $_POST['pin'], $_POST['latitude'], $_POST['longitude'])) {
     $cid = $_POST['container_id'];
     $loc = $_POST['location'];
@@ -31,7 +31,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['container_id'], $_POS
     }
 }
 
-// Fetch containers and users
 $containers = $pdo->query("SELECT * FROM containers")->fetchAll();
 $users = $pdo->query("SELECT id, username, role, created_at FROM users")->fetchAll();
 ?>
@@ -56,20 +55,13 @@ $users = $pdo->query("SELECT id, username, role, created_at FROM users")->fetchA
             z-index: 1000;
             text-align: center;
         }
-        .modal-content {
-            position: relative;
-        }
+        .modal-content { position: relative; }
         .modal-content .close-btn {
             position: absolute;
-            top: -10px;
-            right: -10px;
-            background: red;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            font-size: 14px;
-            width: 24px;
-            height: 24px;
+            top: -10px; right: -10px;
+            background: red; color: white;
+            border: none; border-radius: 50%;
+            font-size: 14px; width: 24px; height: 24px;
             cursor: pointer;
         }
         #map { height: 400px; margin-top: 20px; }
@@ -89,7 +81,7 @@ $users = $pdo->query("SELECT id, username, role, created_at FROM users")->fetchA
 <div class="container">
     <h2>Welcome, <?= htmlspecialchars($_SESSION['username']) ?> (Admin)</h2>
 
-    <!-- Status Messages -->
+    <!-- Feedback Messages -->
     <?php if ($error || $success): ?>
         <div class="modal" id="statusModal">
             <div class="modal-content">
@@ -107,14 +99,40 @@ $users = $pdo->query("SELECT id, username, role, created_at FROM users")->fetchA
 
     <!-- Add Container Form -->
     <h3>Add New Container</h3>
-    <form method="POST">
+    <form id="addForm" method="POST">
         <input type="text" name="container_id" placeholder="Container ID" required>
-        <input type="text" name="location" placeholder="Location" required>
+        <input type="text" name="location" placeholder="Location" id="locationInput" required>
         <input type="password" name="pin" placeholder="4-digit PIN" maxlength="4" required>
-        <input type="text" name="latitude" placeholder="Latitude" required>
-        <input type="text" name="longitude" placeholder="Longitude" required>
         <button type="submit">Add Container</button>
     </form>
+
+    <!-- Auto-Geocode Location -->
+    <script>
+    document.getElementById("addForm").addEventListener("submit", function(e) {
+        e.preventDefault();
+        const form = this;
+        const location = document.getElementById("locationInput").value;
+
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(location)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.length > 0) {
+                    const lat = document.createElement("input");
+                    lat.type = "hidden"; lat.name = "latitude"; lat.value = data[0].lat;
+
+                    const lon = document.createElement("input");
+                    lon.type = "hidden"; lon.name = "longitude"; lon.value = data[0].lon;
+
+                    form.appendChild(lat);
+                    form.appendChild(lon);
+                    form.submit();
+                } else {
+                    alert("❌ Location not found. Try again with a more specific place.");
+                }
+            })
+            .catch(() => alert("❌ Error fetching location data."));
+    });
+    </script>
 
     <!-- Container Table -->
     <h3>Container Status Monitoring</h3>
@@ -139,12 +157,11 @@ $users = $pdo->query("SELECT id, username, role, created_at FROM users")->fetchA
         </tbody>
     </table>
 
-    <!-- Map Display -->
+    <!-- Map -->
     <h3>Container Map</h3>
     <div id="map"></div>
     <script>
         const map = L.map('map').setView([10.3157, 123.8854], 6);
-
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
@@ -166,7 +183,7 @@ $users = $pdo->query("SELECT id, username, role, created_at FROM users")->fetchA
         });
     </script>
 
-    <!-- User List -->
+    <!-- User Table -->
     <h3>Registered Users</h3>
     <table>
         <thead>
