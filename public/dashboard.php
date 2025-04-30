@@ -28,7 +28,7 @@ $containers = $stmt->fetchAll();
 </header>
 
 <div class="container">
-    <h2>Welcome, <?= htmlspecialchars($_SESSION['username']) ?></h2>
+    <h2>Welcome, <?= htmlspecialchars($_SESSION['username']) ?> (<?= $_SESSION['role'] ?? 'user' ?>)</h2>
     <h3>Container Status Monitoring</h3>
 
     <table>

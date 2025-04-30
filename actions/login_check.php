@@ -11,7 +11,8 @@ $user = $stmt->fetch();
 
 if ($user && password_verify($password, $user['password'])) {
     $_SESSION['logged_in'] = true;
-    $_SESSION['username'] = $username;
+    $_SESSION['username'] = $user['username'];
+    $_SESSION['role'] = $user['role'];  
     header('Location: ../public/dashboard.php');
     exit;
 } else {
