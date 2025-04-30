@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Login – LogiLock</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="Login.css">
+    <link rel="stylesheet" href="login.css">
 </head>
 <body>
 
