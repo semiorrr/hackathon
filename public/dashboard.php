@@ -73,7 +73,7 @@ $users = $pdo->query("SELECT id, username, role, created_at FROM users")->fetchA
 <body>
 
 <header>
-    <h1>LogiLock – Admin Dashboard</h1>
+    <h1>LogiLock – Admin</h1>
     <nav>
         <a href="dashboard.php">Dashboard</a>
         <a href="tamper.php">Simulate Tamper</a>

@@ -18,7 +18,7 @@ $containers = $pdo->query("SELECT * FROM containers")->fetchAll();
 <body>
 
 <header>
-    <h1>LogiLock – Staff Dashboard</h1>
+    <h1>LogiLock</h1>
     <nav>
         <a href="Staffdashboard.php">Dashboard</a>
         <a href="tamper.php">Simulate Tamper</a>
