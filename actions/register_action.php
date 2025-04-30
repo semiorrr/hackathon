@@ -9,13 +9,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     try {
         $stmt->execute([$username, $password]);
-        echo "Registration successful! <a href='../public/login.php'>Login now</a>";
+
+        // ✅ Success Modal
+        echo '
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <title>Registration Successful</title>
+            <link rel="stylesheet" href="../public/style.css">
+        </head>
+        <body>
+            <div class="modal">
+                <div class="modal-content">
+                    <h2 style="color: green;">✅ Registration successful!</h2>
+                    <button onclick="window.location.href=\'../public/login.php\'">Login Now</button>
+                </div>
+            </div>
+        </body>
+        </html>';
+
     } catch (PDOException $e) {
-        if ($e->getCode() == 23000) {
-            echo "Username already exists.";
-        } else {
-            echo "Registration failed: " . $e->getMessage();
-        }
+        $message = ($e->getCode() == 23000)
+            ? "❌ Username already exists."
+            : "❌ Registration failed: " . htmlspecialchars($e->getMessage());
+
+        echo '
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <title>Registration Error</title>
+            <link rel="stylesheet" href="../public/style.css">
+        </head>
+        <body>
+            <div class="modal">
+                <div class="modal-content">
+                    <h2 style="color: red;">' . $message . '</h2>
+                    <button onclick="window.location.href=\'../public/register.php\'">Try Again</button>
+                </div>
+            </div>
+        </body>
+        </html>';
     }
 }
 ?>
