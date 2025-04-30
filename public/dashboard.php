@@ -11,17 +11,19 @@ $error = '';
 $success = '';
 
 // Handle new container submission with PIN
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['container_id'], $_POST['location'], $_POST['pin'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['container_id'], $_POST['location'], $_POST['pin'], $_POST['latitude'], $_POST['longitude'])) {
     $cid = $_POST['container_id'];
     $loc = $_POST['location'];
     $pin = $_POST['pin'];
+    $lat = floatval($_POST['latitude']);
+    $lng = floatval($_POST['longitude']);
 
     if (!preg_match('/^\d{4}$/', $pin)) {
         $error = '❌ PIN must be a 4-digit number.';
     } else {
-        $stmt = $pdo->prepare("INSERT INTO containers (container_id, location, pin) VALUES (?, ?, ?)");
+        $stmt = $pdo->prepare("INSERT INTO containers (container_id, location, pin, latitude, longitude) VALUES (?, ?, ?, ?, ?)");
         try {
-            $stmt->execute([$cid, $loc, $pin]);
+            $stmt->execute([$cid, $loc, $pin, $lat, $lng]);
             $success = '✅ Container added successfully!';
         } catch (PDOException $e) {
             $error = '❌ Failed to add container: ' . htmlspecialchars($e->getMessage());
@@ -39,6 +41,8 @@ $users = $pdo->query("SELECT id, username, role, created_at FROM users")->fetchA
     <meta charset="UTF-8">
     <title>Admin Dashboard – LogiLock</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <style>
         .modal {
             position: fixed;
@@ -68,6 +72,7 @@ $users = $pdo->query("SELECT id, username, role, created_at FROM users")->fetchA
             height: 24px;
             cursor: pointer;
         }
+        #map { height: 400px; margin-top: 20px; }
     </style>
 </head>
 <body>
@@ -106,6 +111,8 @@ $users = $pdo->query("SELECT id, username, role, created_at FROM users")->fetchA
         <input type="text" name="container_id" placeholder="Container ID" required>
         <input type="text" name="location" placeholder="Location" required>
         <input type="password" name="pin" placeholder="4-digit PIN" maxlength="4" required>
+        <input type="text" name="latitude" placeholder="Latitude" required>
+        <input type="text" name="longitude" placeholder="Longitude" required>
         <button type="submit">Add Container</button>
     </form>
 
@@ -131,6 +138,33 @@ $users = $pdo->query("SELECT id, username, role, created_at FROM users")->fetchA
             <?php endforeach; ?>
         </tbody>
     </table>
+
+    <!-- Map Display -->
+    <h3>Container Map</h3>
+    <div id="map"></div>
+    <script>
+        const map = L.map('map').setView([10.3157, 123.8854], 6);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        const containers = <?= json_encode($containers) ?>;
+        containers.forEach(c => {
+            if (c.latitude && c.longitude) {
+                const iconColor = c.status === 'Tampered' ? 'red' : 'green';
+                const marker = L.circleMarker([c.latitude, c.longitude], {
+                    radius: 8,
+                    fillColor: iconColor,
+                    color: '#000',
+                    weight: 1,
+                    opacity: 1,
+                    fillOpacity: 0.8
+                }).addTo(map);
+                marker.bindPopup(`<b>${c.container_id}</b><br>Status: ${c.status}<br>Location: ${c.location}`);
+            }
+        });
+    </script>
 
     <!-- User List -->
     <h3>Registered Users</h3>
