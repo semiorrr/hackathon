@@ -52,6 +52,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['container_id'], $_POS
         try {
             $stmt->execute([$cid, $loc, $pin, $origin, $dest, $eta, $lat, $lng, $lat_orig, $lng_orig, $lat_dest, $lng_dest]);
             $success = '✅ Container added successfully!';
+
+            // Log location change
+            logContainerInteraction($cid, 'Location Change', 'Container location updated to ' . $loc);
+
         } catch (PDOException $e) {
             $error = '❌ Failed to add container: ' . htmlspecialchars($e->getMessage());
         }
@@ -60,6 +64,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['container_id'], $_POS
 
 $containers = $pdo->query("SELECT * FROM containers")->fetchAll();
 $users = $pdo->query("SELECT id, username, role, created_at FROM users")->fetchAll();
+
+function logContainerInteraction($container_id, $action, $details) {
+    global $pdo;
+    $stmt = $pdo->prepare("INSERT INTO container_logs (container_id, action, details) VALUES (?, ?, ?)");
+    $stmt->execute([$container_id, $action, $details]);
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -77,6 +87,7 @@ $users = $pdo->query("SELECT id, username, role, created_at FROM users")->fetchA
     <nav>
         <a href="dashboard.php">Dashboard</a>
         <a href="tamper.php">Simulate Tamper</a>
+        <a href="records.php">Records</a> <!-- New button -->
         <a href="logout.php">Logout</a>
     </nav>
 </header>
@@ -94,7 +105,6 @@ $users = $pdo->query("SELECT id, username, role, created_at FROM users")->fetchA
         <script>setTimeout(() => document.getElementById('statusModal').style.display = 'none', 3000);</script>
     <?php endif; ?>
 
-    <!-- Add Form -->
     <h3>Add New Container</h3>
     <form id="addForm" method="POST">
         <input type="text" name="container_id" placeholder="Container ID" required>
@@ -138,7 +148,6 @@ $users = $pdo->query("SELECT id, username, role, created_at FROM users")->fetchA
     });
     </script>
 
-    <!-- Container Table -->
     <h3>Container Status Monitoring</h3>
     <table>
         <thead>
