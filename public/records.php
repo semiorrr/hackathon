@@ -1,4 +1,4 @@
-// records.php
+<?php
 session_start();
 if (!isset($_SESSION['logged_in']) || ($_SESSION['role'] ?? '') !== 'admin') {
     header('Location: login.php');
@@ -9,6 +9,7 @@ require '../config/db.php';
 
 // Fetch logs from container_logs table
 $logs = $pdo->query("SELECT * FROM container_logs ORDER BY action_time DESC")->fetchAll();
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -42,14 +43,20 @@ $logs = $pdo->query("SELECT * FROM container_logs ORDER BY action_time DESC")->f
             </tr>
         </thead>
         <tbody>
-            <?php foreach ($logs as $log): ?>
-            <tr>
-                <td><?= htmlspecialchars($log['container_id']) ?></td>
-                <td><?= htmlspecialchars($log['action']) ?></td>
-                <td><?= htmlspecialchars($log['details']) ?></td>
-                <td><?= $log['action_time'] ?></td>
-            </tr>
-            <?php endforeach; ?>
+            <?php if ($logs): ?>
+                <?php foreach ($logs as $log): ?>
+                    <tr>
+                        <td><?= htmlspecialchars($log['container_id']) ?></td>
+                        <td><?= htmlspecialchars($log['action']) ?></td>
+                        <td><?= htmlspecialchars($log['details']) ?></td>
+                        <td><?= $log['action_time'] ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <tr>
+                    <td colspan="4">No logs found.</td>
+                </tr>
+            <?php endif; ?>
         </tbody>
     </table>
 </div>

@@ -46,7 +46,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['container_id'], $_POS
         $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
         $distance = $earthRadius * $c;
         $speed = 40;
-        $eta = date('Y-m-d H:i:s', time() + (($distance / $speed) * 3600));
+        $eta = date('Y-m-d H:i:s', time() + (int)(($distance / $speed) * 3600));
+
 
         $stmt = $pdo->prepare("INSERT INTO containers (container_id, location, pin, origin, destination, estimated_arrival, latitude, longitude, latitude_origin, longitude_origin, latitude_dest, longitude_dest) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         try {
